@@ -23,6 +23,7 @@ let imgs = [];
 
 let saved = false;
 let game_state = "home";
+let menu_state = "new";
 
 var player = {
 	xp: 0,
@@ -55,14 +56,99 @@ function draw() {
     case "save":
       break;
     case "new":
+      drawGame();
       break;
   }
  
-
- 
-
-  
 }
+
+
+canvas.addEventListener('click', (e) => {
+  const mousePos = {
+    x: e.clientX - canvas.offsetLeft,
+    y: e.clientY - canvas.offsetTop
+  };
+  // each states hitboxes needs to be handled here. 
+
+})
+
+window.addEventListener( "keydown", (e) => {
+  // handle keyboard input based on game_state etc. 
+  console.log(e);
+  switch(game_state)
+  {
+    case "home":
+      if (e.keyCode == 40)
+      {
+        switch(menu_state)
+        {
+          case "new":
+            if (saved) menu_state = "old"; else menu_state = "settings";
+            break;
+          case "old":
+            menu_state = "settings";
+            break;
+          case "settings":
+            menu_state = "about";
+            break;
+          case "about":
+            menu_state = "new";
+            break;
+        }
+      } 
+      if (e.keyCode == 38)
+      {
+        switch(menu_state)
+        {
+          case "settings":
+            if (saved) menu_state = "old"; else menu_state = "new";
+            break;
+          case "about":
+            menu_state = "settings";
+            break;
+          case "new":
+            menu_state = "about";
+            break;
+          case "old":
+            menu_state = "new";
+            break;
+        } 
+        
+
+      }
+      if (e.keyCode == 13)
+      {
+        switch(menu_state)
+        {
+          case "new":
+            game_state = "new";
+            break
+          case "old":
+            break
+          case "settings":
+            game_state = "settings"
+            break
+          case "about":
+            game_state = "about"
+            break
+        }  
+      }
+      break;
+    case "about":
+      if (e.keyCode == 13) game_state = "home";
+      
+      break;
+    case "settings":
+      
+      break;
+    case "load":
+      break;
+    case "save":
+      break;
+    case "new":
+      break;
+  }
+});
 
 function drawMenu()
 {
@@ -90,15 +176,46 @@ function drawMenu()
   
   drawLogo(width/2,height*0.05,128,128)
   drawCharacter(0,0, 64, 'red','blue', 'witch')
+  ctx.fillStyle = "red";
+  switch(menu_state) {
+    case "new" : 
+      ctx.strokeRect((width/2)-79,(height*0.45)-30,158,40)
+      break;
+    case "old" : 
+      ctx.strokeRect((width/2)-79,(height*0.60)-30,158,40)
+      break;
+    case "settings" :
+      ctx.strokeRect((width/2)-79,(height*0.75)-30,160,40)
+      break;
+    case "about" :
+      ctx.strokeRect((width/2)-80,(height*0.9)-30,160,40)
+      break
+      
+  }
 }
 
 function drawAbout()
 {
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle="orange";
+  ctx.fillRect((width/2)-80,(height*0.8)-30,160,40)
+  ctx.fillStyle = "#fff";
+  ctx.textAlign = "center";
+
+  ctx.fillText("You are a witches apprentice. ", width/2, height*0.1);
+  ctx.fillText("Find ingredients for your potions", width/2, height*0.2);
+  ctx.fillText("and spells. Help the inhabitants ", width/2, height*0.3);
+  ctx.fillText("of the town and they will reward you. ", width/2, height*0.4);
+  ctx.fillText("Good Luck!", width/2, height*0.6);
+
+  
+  ctx.fillText("Back", width/2, height*0.8);
 
 }
 
 function drawSettings()
 {
+  ctx.clearRect(0, 0, width, height);
 
 }
 
@@ -175,6 +292,78 @@ function drawCharacter(x,y,scale,primary,secondary,type)
     ctx.closePath();
     ctx.fill();
   }
+  
+}
+
+function drawGrass(x,y,scale,primary,secondary)
+{
+  ctx.fillStyle=secondary
+  ctx.fillRect(x,y,scale,scale)
+  ctx.strokeStyle=primary
+  ctx.lineWidth =4
+
+  ctx.beginPath()
+  ctx.moveTo(x+scale*0.3,y+scale*0.8)
+  ctx.lineTo(x+scale*0.28,y+scale*0.6)
+  ctx.stroke()
+  ctx.beginPath()
+  ctx.moveTo(x+scale*0.7,y+scale*0.78)
+  ctx.lineTo(x+scale*0.72,y+scale*0.58)
+  ctx.stroke()
+  ctx.beginPath()
+  ctx.moveTo(x+scale*0.5,y+scale*0.58)
+  ctx.lineTo(x+scale*0.52,y+scale*0.3)
+  ctx.stroke()
+
+}
+
+function drawWall(x,y,scale,primary,secondary)
+{
+  ctx.fillStyle=secondary
+  ctx.fillRect(x,y,scale,scale)
+  ctx.strokeStyle = primary
+  ctx.lineWidth = 4
+  ctx.beginPath()
+  ctx.moveTo(x,y + scale/2)
+  ctx.lineTo(x+scale,y + scale/2)
+  ctx.stroke()
+
+  ctx.beginPath()
+  ctx.moveTo(x,y )
+  ctx.lineTo(x+scale,y )
+  ctx.stroke()
+
+  ctx.beginPath()
+  ctx.moveTo(x+scale-2,y + scale/2)
+  ctx.lineTo(x+scale-2,y+scale)
+  ctx.stroke()
+
+  
+
+  ctx.beginPath()
+  ctx.moveTo(x + scale/2 -2 ,y)
+  ctx.lineTo(x+ scale/2 -2,y+scale/2)
+  ctx.stroke()
+
+}
+
+function drawGame()
+{
+  ctx.clearRect(0, 0, width, height);
+  for( dx=0;dx<10;dx++)
+  {
+    for(dy=0; dy<6;dy++)
+    {
+      drawWall(dx*64, dy*64, 64, "#303030", "#404040")
+    }
+  }
+  drawHud()
+}
+
+function drawHud()
+{
+  ctx.fillStyle = "grey";
+  ctx.fillRect(0,6*64,width,height - 6*64)
   
 }
 

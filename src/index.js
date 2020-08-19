@@ -19,23 +19,33 @@ let states = [
   
 ]
 
+
 let imgs = [];
 let scale = 64;
 let saved = false;
-let game_state = "home";
+let game_state = "home";// default home, editor for worldedit
 let menu_state = "new";
+
+let editor_state = "tile"; // tile or map
+let editor_x = 0;
+let editor_y = 0;
+let editor_tile = 0;
+let editor_tile_max = 5;
+
+let editor_menu_state = "save"; // also load/clear/exit
 let map_width = scale*10*10;
 let map_height = scale*6*10;
 let tile_map = []
 //generate empty map
 for (x = 0; x<10; x++)
 {
+  tile_map[x] = [];
   for (y = 0;y<10;y++)
   {
-    tile_map[x] = [];
+    tile_map[x][y] = [];
     tile_map[x][y] = 
     "01010101010101010101" + 
-    "01020202020202020201" +
+    "01040202020202020201" +
     "01020203020203020201" + 
     "03030303030303030303" +
     "01020202020202020201" +
@@ -59,6 +69,8 @@ var player = {
 canvas.width = width;
 canvas.height = height;
 
+
+
 function draw() {
   requestAnimationFrame(draw);
 
@@ -80,6 +92,12 @@ function draw() {
     case "new":
       drawGame();
       break;
+    case "editor":
+      drawEditor();
+      break;
+    case "editor-menu":
+      drawEditorMenu();
+      break;
   }
  
 }
@@ -96,7 +114,7 @@ canvas.addEventListener('click', (e) => {
 
 window.addEventListener( "keydown", (e) => {
   // handle keyboard input based on game_state etc. 
-  console.log(e);
+  
   switch(game_state)
   {
     case "home":
@@ -168,6 +186,76 @@ window.addEventListener( "keydown", (e) => {
     case "save":
       break;
     case "new":
+      break;
+    case "editor":
+      if (e.keyCode == 13)
+      {
+        //open context menu
+        game_state = "editor_menu";  
+      }
+      if (e.keyCode == 69)
+      {
+        // switch between map and tile
+        editor_state = editor_state=="map"? "tile" : "map";
+      }
+      if (e.keyCode == 40) // down
+      {
+        if (editor_state == "map" && editor_y<5)
+        {
+          editor_y++
+        }
+      }
+      if (e.keyCode == 38) // up
+      {
+        if (editor_state == "map" && editor_y>0)
+        {
+          editor_y--
+        }
+      }
+      if (e.keyCode == 37) // left
+      {
+        if (editor_state == "map" && editor_x>0)
+        {
+          editor_x--
+        }
+        if (editor_state == "tile")
+        {
+          editor_tile--;
+          if (editor_tile <0)
+          {
+            editor_tile = editor_tile_max;
+          }
+        }
+      }
+      if (e.keyCode == 39) // right
+      {
+        if (editor_state == "map" && editor_x<9)
+        {
+          editor_x++
+        }
+        if (editor_state == "tile")
+        {
+          editor_tile++;
+          if (editor_tile >editor_tile_max)
+          {
+            editor_tile = 0;
+          }
+        }
+      }
+      if (e.keyCode == 32) 
+      {
+        if (editor_state = "map")
+        {
+          
+          
+          tile_map[0][0] = tile_map[0][0].substring(0,2*(editor_x+editor_y*10)) + pad(editor_tile) + tile_map[0][0].substring(2*(editor_x+editor_y*10)+2,tile_map[0][0].length)
+          
+          
+        }
+      }
+      break;
+    case "editor-menu":
+
       break;
   }
 });
@@ -292,8 +380,7 @@ function drawLogo(x,y,w,h)
 
 function drawCharacter(x,y,scale,primary,secondary,type)
 {
-  ctx.fillStyle="green";
-  //ctx.fillRect(x,y,scale,scale);
+  
   
   ctx.fillStyle = primary;
   // head
@@ -317,57 +404,9 @@ function drawCharacter(x,y,scale,primary,secondary,type)
   
 }
 
-function drawGrass(x,y,scale,primary,secondary)
-{
-  ctx.fillStyle=secondary
-  ctx.fillRect(x,y,scale,scale)
-  ctx.strokeStyle=primary
-  ctx.lineWidth =4
 
-  ctx.beginPath()
-  ctx.moveTo(x+scale*0.3,y+scale*0.8)
-  ctx.lineTo(x+scale*0.28,y+scale*0.6)
-  ctx.stroke()
-  ctx.beginPath()
-  ctx.moveTo(x+scale*0.7,y+scale*0.78)
-  ctx.lineTo(x+scale*0.72,y+scale*0.58)
-  ctx.stroke()
-  ctx.beginPath()
-  ctx.moveTo(x+scale*0.5,y+scale*0.58)
-  ctx.lineTo(x+scale*0.52,y+scale*0.3)
-  ctx.stroke()
 
-}
 
-function drawWall(x,y,scale,primary,secondary)
-{
-  ctx.fillStyle=secondary
-  ctx.fillRect(x,y,scale,scale)
-  ctx.strokeStyle = primary
-  ctx.lineWidth = 4
-  ctx.beginPath()
-  ctx.moveTo(x,y + scale/2)
-  ctx.lineTo(x+scale,y + scale/2)
-  ctx.stroke()
-
-  ctx.beginPath()
-  ctx.moveTo(x,y )
-  ctx.lineTo(x+scale,y )
-  ctx.stroke()
-
-  ctx.beginPath()
-  ctx.moveTo(x+scale-2,y + scale/2)
-  ctx.lineTo(x+scale-2,y+scale)
-  ctx.stroke()
-
-  
-
-  ctx.beginPath()
-  ctx.moveTo(x + scale/2 -2 ,y)
-  ctx.lineTo(x+ scale/2 -2,y+scale/2)
-  ctx.stroke()
-
-}
 
 function drawGame()
 {
@@ -375,6 +414,20 @@ function drawGame()
   drawRoom(player.x,player.y)
   
   drawHud()
+}
+
+function drawEditor()
+{
+  ctx.clearRect(0,0, width,height);
+  drawRoom(1,1);
+  if (editor_state=="map")
+    ctx.strokeStyle = "white";
+  else
+    ctx.strokeStyle = "grey";
+  ctx.lineWidth = 2
+  ctx.strokeRect(scale*editor_x,scale*editor_y,scale,scale)
+  //drawCharacter(player.x % (10 * scale),player.y % (6*scale),scale,"blue","red","witch")
+  drawEditorHud();
 }
 
 function drawRoom(px,py)
@@ -387,42 +440,16 @@ function drawRoom(px,py)
     for(dy=0; dy<6;dy++)
     {
       //tile = tile_map[rx,ry].substring(dx+(dy*10)*2,dx+(dy*10)*2+1);
-      tile = String(tile_map[rx,ry]);
-      tile = tile.substr((dx+(dy*10))*2+9,2)
-      console.log(tile)
-      switch(tile)
-      {
-        case "00":
-          //do nothing
-          
-          break;
-        case "01":
-          //draw wall
-          drawWall(dx*scale, dy*scale, scale, "#303030", "#404040")
-          
-          break;
-        case "02":
-          //draw sparse grass
-          drawGrass(dx*scale,dy*scale,scale,'#00aa00','#784642')
-          break;
-        case "03":
-          //draw thick grass
-          drawGrass(dx*scale,dy*scale,scale,'#00aa00','green')
-          break;
-        case "04":
-          //draw tree
-          break;
-        case "05":
-          //draw dirt
-          break;
-      }
+      tile = tile_map[rx][ry];
+      tile = tile.substr((dx+(dy*10))*2,2)
+      drawTile(dx*scale, dy*scale, scale,tile)
       
     }
   }
   // draw background entities here
   // draw npc's here
   // console.log(
-  drawCharacter(player.x % (10 * scale),player.y % (6*scale),scale,"blue","red","witch")
+  
   // draw foreground entities here
 }
 
@@ -435,6 +462,138 @@ function drawHud()
   ctx.fillRect(0,6*scale,width-bezel,height - 6*scale-bezel)
   ctx.fillStyle = "#505050";
   ctx.fillRect(bezel,6*scale+bezel,width-bezel*2,height - 6*scale-bezel*2)
+}
+
+function drawEditorHud()
+{
+  var bezel = 4;
+  ctx.fillStyle = "#202020";
+  ctx.fillRect(0,6*scale,width,height - 6*scale)
+  ctx.fillStyle = "#808080";
+  ctx.fillRect(0,6*scale,width-bezel,height - 6*scale-bezel)
+  ctx.fillStyle = "#505050";
+  ctx.fillRect(bezel,6*scale+bezel,width-bezel*2,height - 6*scale-bezel*2)
+
+  for (i=0;i<5;i++)
+  {
+    drawTile(16+i*24,6*64+24,24,pad(i))
+    
+  }
+  if (editor_state=="tile")
+    ctx.strokeStyle = "white";
+  else
+    ctx.strokeStyle = "grey";
+  ctx.lineWidth = 2
+  ctx.strokeRect(16+editor_tile*24,6*64+24,24,24)
+}
+
+function pad(num) {
+  var s = "00" + num;
+  return s.substr(s.length-2);
+}
+
+function drawTile(x,y,s,code)
+{
+    switch(code)
+    {
+        case "00":
+            break;
+        case "01":
+            //draw wall
+            drawWall(x, y, s, "#303030", "#404040")
+            break;
+        case "02":
+            //draw sparse grass
+            drawGrass(x,y,s,'#00aa00','#784642')
+            break;
+        case "03":
+            //draw thick grass
+            drawGrass(x,y,s,'#00aa00','green')
+            break;
+        case "04":
+            //draw tree
+            drawTree(x,y,s,'green','#522c29')
+            break;
+        case "05":
+            //draw dirt
+            break;
+    }
+}
+
+function drawWall(x,y,s,primary,secondary)
+{
+  ctx.fillStyle=secondary
+  ctx.fillRect(x,y,s,s)
+  ctx.strokeStyle = primary
+  ctx.lineWidth = 4
+
+  ctx.beginPath()
+  ctx.moveTo(x,y + s/2)
+  ctx.lineTo(x+s,y + s/2)
+  ctx.stroke()
+
+  ctx.lineWidth = 2
+  ctx.beginPath()
+  ctx.moveTo(x,y )
+  ctx.lineTo(x+s,y )
+  ctx.stroke()
+
+  ctx.beginPath()
+  ctx.moveTo(x,y+s-2 )
+  ctx.lineTo(x+s,y+s-2 )
+  ctx.stroke()
+
+  ctx.lineWidth = 4
+  ctx.beginPath()
+  ctx.moveTo(x+s-2,y + s/2)
+  ctx.lineTo(x+s-2,y+s)
+  ctx.stroke()
+
+  ctx.beginPath()
+  ctx.moveTo(x + s/2 -2 ,y)
+  ctx.lineTo(x+ s/2 -2,y+s/2)
+  ctx.stroke()
+
+}
+
+function drawGrass(x,y,scale,primary,secondary)
+{
+  ctx.fillStyle=secondary
+  ctx.fillRect(x,y,scale,scale)
+  ctx.strokeStyle=primary
+  ctx.lineWidth =4
+
+  ctx.beginPath()
+  ctx.moveTo(x+scale*0.3,y+scale*0.8)
+  ctx.lineTo(x+scale*0.28,y+scale*0.6)
+  ctx.stroke()
+
+  ctx.beginPath()
+  ctx.moveTo(x+scale*0.7,y+scale*0.78)
+  ctx.lineTo(x+scale*0.72,y+scale*0.58)
+  ctx.stroke()
+
+  ctx.beginPath()
+  ctx.moveTo(x+scale*0.5,y+scale*0.58)
+  ctx.lineTo(x+scale*0.52,y+scale*0.3)
+  ctx.stroke()
+
+}
+
+function drawTree(x,y,s,primary,secondary)
+{
+  ctx.fillStyle=secondary
+  ctx.fillRect(x+s*0.4,y+s*0.5,s*0.2,s*0.5)
+  ctx.fillStyle=primary
+  ctx.beginPath()
+  ctx.moveTo(x+s*0.5,y)
+  ctx.lineTo(x+s*0.8,y+s*0.7)
+  ctx.lineTo(x+s*0.5,y+s*0.6)
+  ctx.lineTo(x+s*0.2,y+s*0.7)
+  ctx.lineTo(x+s*0.5,y)
+  ctx.fill()
+  
+
 }
 
 function loadGame()

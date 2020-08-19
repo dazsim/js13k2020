@@ -20,11 +20,28 @@ let states = [
 ]
 
 let imgs = [];
-
+let scale = 64;
 let saved = false;
 let game_state = "home";
 let menu_state = "new";
-
+let map_width = scale*10*10;
+let map_height = scale*6*10;
+let tile_map = []
+//generate empty map
+for (x = 0; x<10; x++)
+{
+  for (y = 0;y<10;y++)
+  {
+    tile_map[x] = [];
+    tile_map[x][y] = 
+    "01010101010101010101" + 
+    "01020202020202020201" +
+    "01020203020203020201" + 
+    "03030303030303030303" +
+    "01020202020202020201" +
+    "01010101010101010101"
+  }
+}
 var player = {
 	xp: 0,
 	level: 0,
@@ -32,6 +49,11 @@ var player = {
   skills: {},
   spells: {},
   inventory: {},
+  hp: 10,
+  maxhp : 10,
+  x: 320,
+  y: 196,
+
 };
 
 canvas.width = width;
@@ -175,7 +197,7 @@ function drawMenu()
   ctx.fillText("Load Game", width/2, height*0.6);
   
   drawLogo(width/2,height*0.05,128,128)
-  drawCharacter(0,0, 64, 'red','blue', 'witch')
+  drawCharacter(0,0, scale, 'red','blue', 'witch')
   ctx.fillStyle = "red";
   switch(menu_state) {
     case "new" : 
@@ -271,7 +293,7 @@ function drawLogo(x,y,w,h)
 function drawCharacter(x,y,scale,primary,secondary,type)
 {
   ctx.fillStyle="green";
-  ctx.fillRect(x,y,scale,scale);
+  //ctx.fillRect(x,y,scale,scale);
   
   ctx.fillStyle = primary;
   // head
@@ -350,21 +372,69 @@ function drawWall(x,y,scale,primary,secondary)
 function drawGame()
 {
   ctx.clearRect(0, 0, width, height);
+  drawRoom(player.x,player.y)
+  
+  drawHud()
+}
+
+function drawRoom(px,py)
+{
+  var rx = Math.floor(px / (10*scale));
+  var ry = Math.floor(py / (6*scale));
+  var tile = "00";
   for( dx=0;dx<10;dx++)
   {
     for(dy=0; dy<6;dy++)
     {
-      drawWall(dx*64, dy*64, 64, "#303030", "#404040")
+      //tile = tile_map[rx,ry].substring(dx+(dy*10)*2,dx+(dy*10)*2+1);
+      tile = String(tile_map[rx,ry]);
+      tile = tile.substr((dx+(dy*10))*2+9,2)
+      console.log(tile)
+      switch(tile)
+      {
+        case "00":
+          //do nothing
+          
+          break;
+        case "01":
+          //draw wall
+          drawWall(dx*scale, dy*scale, scale, "#303030", "#404040")
+          
+          break;
+        case "02":
+          //draw sparse grass
+          drawGrass(dx*scale,dy*scale,scale,'#00aa00','#784642')
+          break;
+        case "03":
+          //draw thick grass
+          drawGrass(dx*scale,dy*scale,scale,'#00aa00','green')
+          break;
+        case "04":
+          //draw tree
+          break;
+        case "05":
+          //draw dirt
+          break;
+      }
+      
     }
   }
-  drawHud()
+  // draw background entities here
+  // draw npc's here
+  // console.log(
+  drawCharacter(player.x % (10 * scale),player.y % (6*scale),scale,"blue","red","witch")
+  // draw foreground entities here
 }
 
 function drawHud()
 {
-  ctx.fillStyle = "grey";
-  ctx.fillRect(0,6*64,width,height - 6*64)
-  
+  var bezel = 4;
+  ctx.fillStyle = "#202020";
+  ctx.fillRect(0,6*scale,width,height - 6*scale)
+  ctx.fillStyle = "#808080";
+  ctx.fillRect(0,6*scale,width-bezel,height - 6*scale-bezel)
+  ctx.fillStyle = "#505050";
+  ctx.fillRect(bezel,6*scale+bezel,width-bezel*2,height - 6*scale-bezel*2)
 }
 
 function loadGame()

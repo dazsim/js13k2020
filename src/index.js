@@ -23,7 +23,7 @@ let states = [
 let imgs = [];
 let scale = 64;
 let saved = false;
-let game_state = "home";// default home, editor for worldedit
+let game_state = "editor";// default home, editor for worldedit
 let menu_state = "new";
 
 let editor_state = "tile"; // tile or map
@@ -59,7 +59,7 @@ var player = {
   skills: {},
   spells: {},
   inventory: {},
-  hp: 10,
+  hp: 8,
   maxhp : 10,
   x: 320,
   y: 196,
@@ -381,25 +381,26 @@ function drawLogo(x,y,w,h)
 function drawCharacter(x,y,scale,primary,secondary,type)
 {
   
-  
-  ctx.fillStyle = primary;
-  // head
-  ctx.beginPath();
-  ctx.arc(x+scale/2,y+scale*0.5,scale*0.25,0,Math.PI*2);
-  ctx.fill();
   // body
   ctx.fillStyle = secondary;
   ctx.beginPath();
-  ctx.arc(x+scale/2,y+scale,scale*0.25,Math.PI*1,Math.PI*2);
+  ctx.arc(x+scale*0.5,y+scale*0.9,scale*0.25,Math.PI*1,Math.PI*2);
   ctx.fill();
+  ctx.fillStyle = primary;
+  // head
+  ctx.beginPath();
+  ctx.arc(x+scale*0.5,y+scale*0.5,scale*0.15,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle=primary
+  ctx.fillRect(x + scale*0.4,y + scale*0.9,scale*0.05,scale*0.1)
+  ctx.fillRect(x + scale*0.55,y + scale*0.9,scale*0.05,scale*0.1)
+  
   if (type=='witch')
   {
-    ctx.beginPath();
-    ctx.moveTo(x+scale*0.25,y+scale*0.25);
-    ctx.lineTo(x+scale/2,y);
-    ctx.lineTo(x+scale*0.75,y+scale*0.25);
-    ctx.closePath();
-    ctx.fill();
+    drawLogo(x+scale*0.5,y,scale*0.5,scale*0.5)
+    
+
   }
   
 }
@@ -412,7 +413,7 @@ function drawGame()
 {
   ctx.clearRect(0, 0, width, height);
   drawRoom(player.x,player.y)
-  
+  drawCharacter(player.x % (10 * scale),player.y % (6*scale),scale,"blue","red","witch")
   drawHud()
 }
 
@@ -462,6 +463,17 @@ function drawHud()
   ctx.fillRect(0,6*scale,width-bezel,height - 6*scale-bezel)
   ctx.fillStyle = "#505050";
   ctx.fillRect(bezel,6*scale+bezel,width-bezel*2,height - 6*scale-bezel*2)
+  ctx.fillStyle = "black";
+  ctx.arc(320,6*scale+48,40,0,Math.PI*2)
+  ctx.fill();
+  ctx.fillStyle = "red";
+  ctx.beginPath()
+  console.log("left: " + player.hp/player.maxhp*Math.PI)
+  console.log("right: " + (Math.PI -  player.hp/player.maxhp*Math.PI))
+  ctx.arc(320,6*scale+48,40,player.hp/player.maxhp*Math.PI + Math.PI,Math.PI*2 -  player.hp/player.maxhp*Math.PI)
+  ctx.fill();
+  player.hp -= 0.01;
+
 }
 
 function drawEditorHud()

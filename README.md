@@ -1,20 +1,6 @@
-# js13kgames-parcel-starter
-This repo uses [Parcel](https://parceljs.org/) to build and zip games created for [js13kgames](http://js13kgames.com/).
+# My js13k entry for 2020 - "Witches Apprentice
 
-## Requirements
+This is the concept version of my game Witches Apprentice. The theme was 404. The aim of this game is to find the missing ingredients to make potions and spells for the town folk.
 
-The commands assume [Yarn](https://yarnpkg.com/en/docs/install) is installed.
+Runs using js/html so should run on pretty much anything.
 
-## Commands
-
-### `yarn start`
-
-Start the Parcel build server at `http://localhost:1234`.
-
-### `yarn build`
-
-Build, minify, and inline the game to `./dist/inlined/index.html`.
-
-### `yarn party`
-
-Build, minify, inline, and zip the game to `./dist/zipped/game.zip`. This command finishes with a log message that says if the zip file is under 13k.

@@ -1,7 +1,9 @@
 const width = 640;
 const height = 480;
 const canvas = document.getElementById("game");
+const scratch = document.getElementById("gen");
 const ctx = canvas.getContext("2d");
+const ctx2 = scratch.getContext("2d");
 let size = { width: 50, height: 50 };
 let position = { x: 0, y: 0 };
 let velocity = { x: 1, y: 1 };
@@ -65,6 +67,46 @@ var player = {
   y: 196,
 
 };
+
+class MapElement {
+  constructor(sp,x,y,w,h,sc,l) {
+    this.sp = sp
+    this.x = x
+    this.y = y
+    this.w = w
+    this.h = h
+    this.sc = sc
+    this.l = l
+    
+  }
+  
+}
+
+class Sprite {
+  constructor(t,s,c1,c2,c3) {
+    this.t = t
+    this.s = s
+    ctx2.clearRect(0, 0, s, s);
+    eval(this.t)(ctx2,0,0,s,c1,c2,c3)
+    this.sp = ctx2.getImageData(0,0,s,s)
+    this.i = new Image();
+    this.i.src = scratch.toDataURL()
+    
+    
+    
+
+  }
+  draw(c,x,y)
+  {
+    c.putImagedata(this.sp,x,y)
+  }
+
+}
+
+var sprites = []
+//drawWall(ctx,x, y, s, "#303030", "#404040")
+sprites.push( new Sprite("drawWall",32,"#303030","#404040"))
+sprites.push( new Sprite("drawTree",32,'green','brown'))
 
 canvas.width = width;
 canvas.height = height;
@@ -284,8 +326,8 @@ function drawMenu()
   if (saved) ctx.fillStyle = "#fff"; else ctx.fillStyle = "grey";
   ctx.fillText("Load Game", width/2, height*0.6);
   
-  drawLogo(width/2,height*0.05,128,128)
-  drawCharacter(0,0, scale, 'red','blue', 'witch')
+  drawLogo(ctx,width/2,height*0.05,128,128)
+  drawCharacter(ctx,0,0, scale, 'red','blue', 'witch')
   ctx.fillStyle = "red";
   switch(menu_state) {
     case "new" : 
@@ -329,82 +371,97 @@ function drawSettings()
 
 }
 
-function drawLogo(x,y,w,h)
+function drawLogo(c,x,y,w,h)
 {
   
   
-  ctx.fillStyle = '#aaa';
-  ctx.beginPath();
-  ctx.ellipse(x, y+(h*0.85), w*0.45, h*0.1, 0, 0, Math.PI * 2);
-  ctx.fill();
+  c.fillStyle = '#aaa';
+  c.beginPath();
+  c.ellipse(x, y+(h*0.85), w*0.45, h*0.1, 0, 0, Math.PI * 2);
+  c.fill();
 
-  ctx.fillStyle = '#666';
-  ctx.beginPath();
-  ctx.ellipse(x, y+(h*0.85), w*0.45, h*0.1, 0, Math.PI *1.7, Math.PI * 2.7);
-  ctx.fill();
+  c.fillStyle = '#666';
+  c.beginPath();
+  c.ellipse(x, y+(h*0.85), w*0.45, h*0.1, 0, Math.PI *1.7, Math.PI * 2.7);
+  c.fill();
 
-  ctx.fillStyle = '#b476de';
-  ctx.beginPath();
-  ctx.ellipse(x, y+(h*0.79), w*0.3, h*0.08, 0, 0, Math.PI * 2.0);
-  ctx.fill();
+  c.fillStyle = '#b476de';
+  c.beginPath();
+  c.ellipse(x, y+(h*0.79), w*0.3, h*0.08, 0, 0, Math.PI * 2.0);
+  c.fill();
 
-  ctx.fillStyle = '#aaa';
-  ctx.beginPath();
-  ctx.moveTo(x - w*0.3,y + (h*0.79));
-  ctx.lineTo(x - w*0.25,y+(h*0.5));
-  ctx.lineTo(x ,y+(h*0.35));
-  ctx.lineTo(x +w*0.3 ,y+(h*0.3));
-  ctx.lineTo(x +w*0.7 ,y+(h*0.55));
-  ctx.lineTo(x +w*0.4,y+(h*0.5));
+  c.fillStyle = '#aaa';
+  c.beginPath();
+  c.moveTo(x - w*0.3,y + (h*0.79));
+  c.lineTo(x - w*0.25,y+(h*0.5));
+  c.lineTo(x ,y+(h*0.35));
+  c.lineTo(x +w*0.3 ,y+(h*0.3));
+  c.lineTo(x +w*0.7 ,y+(h*0.55));
+  c.lineTo(x +w*0.4,y+(h*0.5));
 
-  ctx.lineTo(x + w*0.25,y+(h*0.5));
-  ctx.lineTo(x + w*0.3,y+ (h*0.79));
-  ctx.closePath();
-  ctx.fill();
+  c.lineTo(x + w*0.25,y+(h*0.5));
+  c.lineTo(x + w*0.3,y+ (h*0.79));
+  c.closePath();
+  c.fill();
 
-  ctx.fillStyle = '#b476de';
-  ctx.beginPath();
-  ctx.moveTo(x - w*0.3,y + (h*0.79));
-  ctx.lineTo(x - w*0.29,y + (h*0.7));
-  ctx.lineTo(x + w*0.3,y + (h*0.7));
-  ctx.lineTo(x + w*0.3,y + (h*0.79));
-  ctx.closePath();
-  ctx.fill();
+  c.fillStyle = '#b476de';
+  c.beginPath();
+  c.moveTo(x - w*0.3,y + (h*0.79));
+  c.lineTo(x - w*0.29,y + (h*0.7));
+  c.lineTo(x + w*0.3,y + (h*0.7));
+  c.lineTo(x + w*0.3,y + (h*0.79));
+  c.closePath();
+  c.fill();
 
-  ctx.fillStyle = '#aaa';
-  ctx.beginPath();
-  ctx.ellipse(x, y+(h*0.7), w*0.29, h*0.07, 0, 0, Math.PI * 2.0);
-  ctx.fill();
+  c.fillStyle = '#aaa';
+  c.beginPath();
+  c.ellipse(x, y+(h*0.7), w*0.29, h*0.07, 0, 0, Math.PI * 2.0);
+  c.fill();
 
 }
 
-function drawCharacter(x,y,scale,primary,secondary,type)
+function drawCharacter(c,x,y,scale,primary,secondary,type)
 {
   
   // body
-  ctx.fillStyle = secondary;
-  ctx.beginPath();
-  ctx.arc(x+scale*0.5,y+scale*0.9,scale*0.25,Math.PI*1,Math.PI*2);
-  ctx.fill();
-  ctx.fillStyle = primary;
+  c.fillStyle = secondary;
+  c.beginPath();
+  c.arc(x+scale*0.5,y+scale*0.9,scale*0.25,Math.PI*1,Math.PI*2);
+  c.fill();
+  c.fillStyle = primary;
   // head
-  ctx.beginPath();
-  ctx.arc(x+scale*0.5,y+scale*0.5,scale*0.15,0,Math.PI*2);
-  ctx.fill();
+  c.beginPath();
+  c.arc(x+scale*0.5,y+scale*0.5,scale*0.15,0,Math.PI*2);
+  c.fill();
 
-  ctx.fillStyle=primary
-  ctx.fillRect(x + scale*0.4,y + scale*0.9,scale*0.05,scale*0.1)
-  ctx.fillRect(x + scale*0.55,y + scale*0.9,scale*0.05,scale*0.1)
+  c.fillStyle=primary
+  c.fillRect(x + scale*0.4,y + scale*0.9,scale*0.05,scale*0.1)
+  c.fillRect(x + scale*0.55,y + scale*0.9,scale*0.05,scale*0.1)
   
   if (type=='witch')
   {
-    drawLogo(x+scale*0.5,y,scale*0.5,scale*0.5)
+    drawLogo(c,x+scale*0.5,y,scale*0.5,scale*0.5)
     
 
   }
   
 }
 
+function drawArea(spr,x,y,s,w,h)
+{
+  scratch.width = w
+  scratch.height = h
+  for(i=0;i < w/s+1;i++)
+  {
+    for(j=0;j < h/s+1;j++)
+    {
+      ctx2.drawImage(spr.i,i*s,j*s);
+    }
+  }
+  var i = new Image();
+  i.src = scratch.toDataURL();
+  ctx.drawImage(i,x,y);
+}
 
 
 
@@ -420,12 +477,20 @@ function drawGame()
 function drawEditor()
 {
   ctx.clearRect(0,0, width,height);
-  drawRoom(1,1);
+  
+  
+  //drawArea(sprites[1],120,120,32,240,220)
+
+  //drawArea(spr,135,145,32,220,220)
+  
+  //drawRoom(1,1);
+
   if (editor_state=="map")
     ctx.strokeStyle = "white";
   else
     ctx.strokeStyle = "grey";
   ctx.lineWidth = 2
+  // change this to highlight the area currently selected in the layer list.
   ctx.strokeRect(scale*editor_x,scale*editor_y,scale,scale)
   //drawCharacter(player.x % (10 * scale),player.y % (6*scale),scale,"blue","red","witch")
   drawEditorHud();
@@ -512,19 +577,19 @@ function drawTile(x,y,s,code)
             break;
         case "01":
             //draw wall
-            drawWall(x, y, s, "#303030", "#404040")
+            drawWall(ctx,x, y, s, "#303030", "#404040")
             break;
         case "02":
             //draw sparse grass
-            drawGrass(x,y,s,'#00aa00','#784642')
+            drawGrass(ctx,x,y,s,'#00aa00','#784642')
             break;
         case "03":
             //draw thick grass
-            drawGrass(x,y,s,'#00aa00','green')
+            drawGrass(ctx,x,y,s,'#00aa00','green')
             break;
         case "04":
             //draw tree
-            drawTree(x,y,s,'green','#522c29')
+            drawTree(ctx,x,y,s,'green','#522c29')
             break;
         case "05":
             //draw dirt
@@ -532,78 +597,78 @@ function drawTile(x,y,s,code)
     }
 }
 
-function drawWall(x,y,s,primary,secondary)
+function drawWall(c,x,y,s,primary,secondary)
 {
-  ctx.fillStyle=secondary
-  ctx.fillRect(x,y,s,s)
-  ctx.strokeStyle = primary
-  ctx.lineWidth = 4
+  c.fillStyle=secondary
+  c.fillRect(x,y,s,s)
+  c.strokeStyle = primary
+  c.lineWidth = 4
 
-  ctx.beginPath()
-  ctx.moveTo(x,y + s/2)
-  ctx.lineTo(x+s,y + s/2)
-  ctx.stroke()
+  c.beginPath()
+  c.moveTo(x,y + s/2)
+  c.lineTo(x+s,y + s/2)
+  c.stroke()
 
-  ctx.lineWidth = 2
-  ctx.beginPath()
-  ctx.moveTo(x,y )
-  ctx.lineTo(x+s,y )
-  ctx.stroke()
+  c.lineWidth = 2
+  c.beginPath()
+  c.moveTo(x,y )
+  c.lineTo(x+s,y )
+  c.stroke()
 
-  ctx.beginPath()
-  ctx.moveTo(x,y+s-2 )
-  ctx.lineTo(x+s,y+s-2 )
-  ctx.stroke()
+  c.beginPath()
+  c.moveTo(x,y+s-2 )
+  c.lineTo(x+s,y+s-2 )
+  c.stroke()
 
-  ctx.lineWidth = 4
-  ctx.beginPath()
-  ctx.moveTo(x+s-2,y + s/2)
-  ctx.lineTo(x+s-2,y+s)
-  ctx.stroke()
+  c.lineWidth = 4
+  c.beginPath()
+  c.moveTo(x+s-2,y + s/2)
+  c.lineTo(x+s-2,y+s)
+  c.stroke()
 
-  ctx.beginPath()
-  ctx.moveTo(x + s/2 -2 ,y)
-  ctx.lineTo(x+ s/2 -2,y+s/2)
-  ctx.stroke()
+  c.beginPath()
+  c.moveTo(x + s/2 -2 ,y)
+  c.lineTo(x+ s/2 -2,y+s/2)
+  c.stroke()
 
 }
 
-function drawGrass(x,y,scale,primary,secondary)
+function drawGrass(c,x,y,scale,primary,secondary)
 {
-  ctx.fillStyle=secondary
-  ctx.fillRect(x,y,scale,scale)
-  ctx.strokeStyle=primary
-  ctx.lineWidth =4
+  c.fillStyle=secondary
+  c.fillRect(x,y,scale,scale)
+  c.strokeStyle=primary
+  c.lineWidth =4
 
-  ctx.beginPath()
-  ctx.moveTo(x+scale*0.3,y+scale*0.8)
-  ctx.lineTo(x+scale*0.28,y+scale*0.6)
-  ctx.stroke()
+  c.beginPath()
+  c.moveTo(x+scale*0.3,y+scale*0.8)
+  c.lineTo(x+scale*0.28,y+scale*0.6)
+  c.stroke()
 
-  ctx.beginPath()
-  ctx.moveTo(x+scale*0.7,y+scale*0.78)
-  ctx.lineTo(x+scale*0.72,y+scale*0.58)
-  ctx.stroke()
+  c.beginPath()
+  c.moveTo(x+scale*0.7,y+scale*0.78)
+  c.lineTo(x+scale*0.72,y+scale*0.58)
+  c.stroke()
 
-  ctx.beginPath()
-  ctx.moveTo(x+scale*0.5,y+scale*0.58)
-  ctx.lineTo(x+scale*0.52,y+scale*0.3)
-  ctx.stroke()
+  c.beginPath()
+  c.moveTo(x+scale*0.5,y+scale*0.58)
+  c.lineTo(x+scale*0.52,y+scale*0.3)
+  c.stroke()
 
 }
 
-function drawTree(x,y,s,primary,secondary)
+function drawTree(c,x,y,s,primary,secondary)
 {
-  ctx.fillStyle=secondary
-  ctx.fillRect(x+s*0.4,y+s*0.5,s*0.2,s*0.5)
-  ctx.fillStyle=primary
-  ctx.beginPath()
-  ctx.moveTo(x+s*0.5,y)
-  ctx.lineTo(x+s*0.8,y+s*0.7)
-  ctx.lineTo(x+s*0.5,y+s*0.6)
-  ctx.lineTo(x+s*0.2,y+s*0.7)
-  ctx.lineTo(x+s*0.5,y)
-  ctx.fill()
+  c.fillStyle=secondary
+  c.fillRect(x+s*0.4,y+s*0.5,s*0.2,s*0.5)
+  c.fillStyle=primary
+  c.beginPath()
+  c.moveTo(x+s*0.5,y)
+  c.lineTo(x+s*0.8,y+s*0.7)
+  c.lineTo(x+s*0.5,y+s*0.6)
+  c.lineTo(x+s*0.2,y+s*0.7)
+  c.lineTo(x+s*0.5,y)
+  c.fill()
   
 
 }

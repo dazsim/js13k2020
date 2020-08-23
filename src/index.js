@@ -1,5 +1,5 @@
-const width = 640;
-const height = 480;
+const width = 1024;
+const height = 768;
 const canvas = document.getElementById("game");
 const scratch = document.getElementById("gen");
 const ctx = canvas.getContext("2d");
@@ -28,32 +28,26 @@ let saved = false;
 let game_state = "editor";// default home, editor for worldedit
 let menu_state = "new";
 
-let editor_state = "tile"; // tile or map
-let editor_x = 0;
-let editor_y = 0;
+let editor_state = "add"; // add or edit
+let e_c_state = 0 // 0 is no click, 1 is first click
+let e_c_x = 0;
+let e_c_y = 0;
 let editor_tile = 0;
 let editor_tile_max = 5;
 
 let editor_menu_state = "save"; // also load/clear/exit
 let map_width = scale*10*10;
 let map_height = scale*6*10;
-let tile_map = []
-//generate empty map
-for (x = 0; x<10; x++)
-{
-  tile_map[x] = [];
-  for (y = 0;y<10;y++)
-  {
-    tile_map[x][y] = [];
-    tile_map[x][y] = 
-    "01010101010101010101" + 
-    "01040202020202020201" +
-    "01020203020203020201" + 
-    "03030303030303030303" +
-    "01020202020202020201" +
-    "01010101010101010101"
-  }
-}
+
+let mx = 0;
+let my = 0;
+let editor_map_zoom = 0;
+let e_sprite_s = 0;
+let e_layers_s = 0;
+
+let world_elements = []
+
+
 var player = {
 	xp: 0,
 	level: 0,
@@ -84,21 +78,21 @@ class MapElement {
 
 class Sprite {
   constructor(t,s,c1,c2,c3) {
+    //scratch.width=s
+    //scratch.height=s
     this.t = t
     this.s = s
-    ctx2.clearRect(0, 0, s, s);
+    ctx2.clearRect(0, 0, s, s)
     eval(this.t)(ctx2,0,0,s,c1,c2,c3)
-    this.sp = ctx2.getImageData(0,0,s,s)
-    this.i = new Image();
+    
+    this.i = new Image()
     this.i.src = scratch.toDataURL()
     
-    
-    
-
   }
   draw(c,x,y)
   {
-    c.putImagedata(this.sp,x,y)
+    
+    c.drawImage(this.i,x,y)
   }
 
 }
@@ -108,6 +102,16 @@ var sprites = []
 sprites.push( new Sprite("drawWall",32,"#303030","#404040"))
 sprites.push( new Sprite("drawTree",32,'green','brown'))
 
+sprites.push( new Sprite("drawGrass",32,'#00aa00','#784642'))
+sprites.push( new Sprite("drawGrass",32,'#00aa00','green'))
+sprites.push( new Sprite("drawGrass",32,'#522c29','#824541'))
+sprites.push( new Sprite("drawFloor",32,'#522c29','#824541'))
+
+world_elements.push(new MapElement((sprites[4]),0,0,640,100,32,0))
+world_elements.push(new MapElement((sprites[3]),0,100,640,300,32,1))
+world_elements.push(new MapElement((sprites[0]),48,48,150,150,32,2))
+
+world_elements.sort((a, b) => a.l - b.l)
 canvas.width = width;
 canvas.height = height;
 
@@ -144,14 +148,67 @@ function draw() {
  
 }
 
+function getMousePos(canvas, e) {
+  var rect = canvas.getBoundingClientRect();
+  return {
+    x: e.clientX - rect.left,
+    y: e.clientY - rect.top
+  };
+}
+
+canvas.addEventListener('mousemove', function(e) {
+  var mousePos = getMousePos(canvas, e);
+  mx = mousePos.x;
+  my = mousePos.y;
+  console.log("X: " + mx)
+  console.log('Y: ' + my)
+}, false);
+
+canvas.addEventListener('wheel',function(e){
+  // e.deltaY
+  console.log(e);
+  return false; 
+}, false);
+
 
 canvas.addEventListener('click', (e) => {
   const mousePos = {
     x: e.clientX - canvas.offsetLeft,
     y: e.clientY - canvas.offsetTop
   };
+  mx = mousePos.x;
+  my = mousePos.y;
   // each states hitboxes needs to be handled here. 
+  switch (game_state)
+  {
+    case "editor":
+      switch (editor_state)
+      {
+        case "add":
+          if (mx < width-200 && my < height-200)
+          {
+            // we are in the build area
+            if (!e_c_state)
+            {
+              e_c_state++
+              e_c_x = mx
+              e_c_y = my
+            } else
+            {
+              // add new bounding area
+              world_elements.push(new MapElement((sprites[editor_tile]),e_c_x,e_c_y,mx-e_c_x,my-e_c_y,32,e_layers_s+1))
+              e_layers_s++
+              e_c_state = 0
+            }
+          }
+      }
+  }
+})
 
+canvas.addEventListener('auxclick', function(e) {
+  if (e.button == 1) {
+    // standard checks for 
+  }
 })
 
 window.addEventListener( "keydown", (e) => {
@@ -238,29 +295,20 @@ window.addEventListener( "keydown", (e) => {
       if (e.keyCode == 69)
       {
         // switch between map and tile
-        editor_state = editor_state=="map"? "tile" : "map";
+        editor_state = editor_state=="add"? "edit" : "add";
       }
       if (e.keyCode == 40) // down
       {
-        if (editor_state == "map" && editor_y<5)
-        {
-          editor_y++
-        }
+      
       }
       if (e.keyCode == 38) // up
       {
-        if (editor_state == "map" && editor_y>0)
-        {
-          editor_y--
-        }
+      
       }
       if (e.keyCode == 37) // left
       {
-        if (editor_state == "map" && editor_x>0)
-        {
-          editor_x--
-        }
-        if (editor_state == "tile")
+      
+        if (editor_state == "add")
         {
           editor_tile--;
           if (editor_tile <0)
@@ -271,14 +319,11 @@ window.addEventListener( "keydown", (e) => {
       }
       if (e.keyCode == 39) // right
       {
-        if (editor_state == "map" && editor_x<9)
-        {
-          editor_x++
-        }
-        if (editor_state == "tile")
+        
+        if (editor_state == "add")
         {
           editor_tile++;
-          if (editor_tile >editor_tile_max)
+          if (editor_tile >=sprites.length)
           {
             editor_tile = 0;
           }
@@ -286,14 +331,7 @@ window.addEventListener( "keydown", (e) => {
       }
       if (e.keyCode == 32) 
       {
-        if (editor_state = "map")
-        {
-          
-          
-          tile_map[0][0] = tile_map[0][0].substring(0,2*(editor_x+editor_y*10)) + pad(editor_tile) + tile_map[0][0].substring(2*(editor_x+editor_y*10)+2,tile_map[0][0].length)
-          
-          
-        }
+        
       }
       break;
     case "editor-menu":
@@ -449,6 +487,7 @@ function drawCharacter(c,x,y,scale,primary,secondary,type)
 
 function drawArea(spr,x,y,s,w,h)
 {
+  
   scratch.width = w
   scratch.height = h
   for(i=0;i < w/s+1;i++)
@@ -484,6 +523,7 @@ function drawEditor()
   //drawArea(spr,135,145,32,220,220)
   
   //drawRoom(1,1);
+  drawWorldElements(0,0)
 
   if (editor_state=="map")
     ctx.strokeStyle = "white";
@@ -491,7 +531,7 @@ function drawEditor()
     ctx.strokeStyle = "grey";
   ctx.lineWidth = 2
   // change this to highlight the area currently selected in the layer list.
-  ctx.strokeRect(scale*editor_x,scale*editor_y,scale,scale)
+  //ctx.strokeRect(scale*editor_x,scale*editor_y,scale,scale)
   //drawCharacter(player.x % (10 * scale),player.y % (6*scale),scale,"blue","red","witch")
   drawEditorHud();
 }
@@ -519,6 +559,14 @@ function drawRoom(px,py)
   // draw foreground entities here
 }
 
+function drawWorldElements(dx,dy)
+{
+  world_elements.forEach(function(e){
+    
+    drawArea((e.sp),e.x,e.y,32,e.w,e.h)
+  })
+}
+
 function drawHud()
 {
   var bezel = 4;
@@ -543,25 +591,31 @@ function drawHud()
 
 function drawEditorHud()
 {
-  var bezel = 4;
+  var b = 4;
   ctx.fillStyle = "#202020";
-  ctx.fillRect(0,6*scale,width,height - 6*scale)
+  ctx.fillRect(0,height-b,width,b)
+  ctx.fillRect(width-b,0,b,height)
   ctx.fillStyle = "#808080";
-  ctx.fillRect(0,6*scale,width-bezel,height - 6*scale-bezel)
+  ctx.fillRect(0,height-200,width-b,200-b)
+  ctx.fillRect(width-200,0,200-b,height -b)
   ctx.fillStyle = "#505050";
-  ctx.fillRect(bezel,6*scale+bezel,width-bezel*2,height - 6*scale-bezel*2)
+  ctx.fillRect(b,height-200+b,width-b*2,200-b*2)
+  ctx.fillRect(width-200+b , b,200 - b*2,height - 200 )
 
-  for (i=0;i<5;i++)
-  {
-    drawTile(16+i*24,6*64+24,24,pad(i))
-    
-  }
-  if (editor_state=="tile")
+  
+  var i = 1;
+  sprites.forEach(function(s) {
+    s.draw(ctx,i*32,height-180)
+    i++;
+  })
+  if (editor_state=="add")
     ctx.strokeStyle = "white";
   else
     ctx.strokeStyle = "grey";
   ctx.lineWidth = 2
-  ctx.strokeRect(16+editor_tile*24,6*64+24,24,24)
+  ctx.strokeRect(32+editor_tile*32,height-180,32,32)
+
+  
 }
 
 function pad(num) {
@@ -633,26 +687,60 @@ function drawWall(c,x,y,s,primary,secondary)
 
 }
 
-function drawGrass(c,x,y,scale,primary,secondary)
+function drawFloor(c,x,y,s,primary,secondary)
+{
+  c.fillStyle = secondary
+  c.fillRect(x,y,s,s)
+  c.strokeStyle=primary
+  c.lineWidth =s/16
+  
+  c.beginPath()
+  c.moveTo(x+s*0.25,y)
+  c.lineTo(x+s*0.25,y+s)
+  c.stroke()
+
+  c.beginPath()
+  c.moveTo(x+s*0.5,y)
+  c.lineTo(x+s*0.5,y+s)
+  c.stroke()
+
+  c.beginPath()
+  c.moveTo(x+s*0.75,y)
+  c.lineTo(x+s*0.75,y+s)
+  c.stroke()
+
+  c.beginPath()
+  c.moveTo(x,y+s*0.5 )
+  c.lineTo(x+s*0.25,y+s*0.5 )
+  c.stroke()
+
+  c.beginPath()
+  c.moveTo(x+s*0.5,y+s*0.5)
+  c.lineTo(x+s*0.75,y+s*0.5)
+  c.stroke()
+
+}
+
+function drawGrass(c,x,y,s,primary,secondary)
 {
   c.fillStyle=secondary
-  c.fillRect(x,y,scale,scale)
+  c.fillRect(x,y,s,s)
   c.strokeStyle=primary
   c.lineWidth =4
 
   c.beginPath()
-  c.moveTo(x+scale*0.3,y+scale*0.8)
-  c.lineTo(x+scale*0.28,y+scale*0.6)
+  c.moveTo(x+s*0.3,y+s*0.8)
+  c.lineTo(x+s*0.28,y+s*0.6)
   c.stroke()
 
   c.beginPath()
-  c.moveTo(x+scale*0.7,y+scale*0.78)
-  c.lineTo(x+scale*0.72,y+scale*0.58)
+  c.moveTo(x+s*0.7,y+s*0.78)
+  c.lineTo(x+s*0.72,y+s*0.58)
   c.stroke()
 
   c.beginPath()
-  c.moveTo(x+scale*0.5,y+scale*0.58)
-  c.lineTo(x+scale*0.52,y+scale*0.3)
+  c.moveTo(x+s*0.5,y+s*0.58)
+  c.lineTo(x+s*0.52,y+s*0.3)
   c.stroke()
 
 }

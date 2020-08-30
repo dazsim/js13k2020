@@ -25,19 +25,22 @@ function rgba(r,g,b,a) {
   
   return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
 }
-function sheet()
+function sheet(x,seed = 0,a=255,b=255,c=255)
 {
-  T = Math.tan
-  S = Math.sin
-  x = document.getElementById("game").getContext("2d")
-  let t=  0
-  R = rgba
-for(i=82;i--;T(f=m=>x.fillRect(S?0:70+t*60%19*99-X*m,S?0:8+Y*8+(t*3|0)*98,a=S?2e3:8,a,S=0))>9||S?T(T=e=>Math.random()*255)**2/2e3>X*X+(Y-5)**2&&f(8)+f(-8):x.fillStyle=R(T(),T(),T()))X=i&7,Y=i>>3
+  
+  x.lineWidth=2
+  r=_=>(Math.sin(++s)+1)*1e9%255|0
+  for(t=640;t--;)
+  for(k=4;k--;)
+  for(s=seed+t*t,i=r()/9+50|0;i--;)
+  X=i&7,Y=i>>3,n=r()/255,d=a*n,e=b*n,f=c*n,
+  r()<29?x.fillStyle=`rgb(${d},${e},${f})`:r()**2/2e3>X*X+(Y-5)**2&&x[k&2?'strokeRect':'fillRect'](7+t%30*16-k%2*2*X+X,3+(t>>5)*16+Y,1,1)
 }
+
 let imgs = [];
 let scale = 64;
 let saved = false;
-let game_state = "home";// default home, editor for worldedit
+let game_state = "editor";// default home, editor for worldedit
 let menu_state = "new";
 let pan = false;
 let w_dx = 0;
@@ -94,11 +97,12 @@ class MapElement {
 }
 
 class Sprite {
-  constructor(t,s,c1,c2,c3) {
+  constructor(i,t,s,c1,c2,c3) {
     //scratch.width=s
     //scratch.height=s
     this.t = t
     this.s = s
+    this.i = i
     ctx2.clearRect(0, 0, s, s)
     eval(this.t)(ctx2,0,0,s,c1,c2,c3)
     
@@ -116,25 +120,37 @@ class Sprite {
 
 var sprites = []
 //drawWall(ctx,x, y, s, "#303030", "#404040")
-sprites.push( new Sprite("drawWall",32,"#303030","#404040"))
-sprites.push( new Sprite("drawTree",32,'#2a2','brown'))
+sprites.push( new Sprite(0,"drawWall",32,"#303030","#404040"))
+sprites.push( new Sprite(1,"drawTree",32,'#2a2','brown'))
 
-sprites.push( new Sprite("drawGrass",32,'#00aa00','#784642'))
-sprites.push( new Sprite("drawGrass",32,'#00aa00','green'))
-sprites.push( new Sprite("drawGrass",32,'#522c29','#824541'))
-sprites.push( new Sprite("drawFloor",32,'#522c29','#824541'))
-sprites.push( new Sprite("drawDoor",32,"black","brown"))
-sprites.push( new Sprite("drawDoor",32,"lightgrey","grey",1))
-sprites.push( new Sprite("drawWater",32,'cyan','blue',0))
-sprites.push( new Sprite("drawChair",32,"brown","brown",0))
-sprites.push( new Sprite("drawChair",32,"brown","brown",1))
+sprites.push( new Sprite(2,"drawGrass",32,'#00aa00','#784642'))
+sprites.push( new Sprite(3,"drawGrass",32,'#00aa00','green'))
+sprites.push( new Sprite(4,"drawGrass",32,'#522c29','#824541'))
+sprites.push( new Sprite(5,"drawFloor",32,'#522c29','#824541'))
+sprites.push( new Sprite(6,"drawDoor",32,"black","brown"))
+sprites.push( new Sprite(7,"drawDoor",32,"lightgrey","grey",1))
+sprites.push( new Sprite(8,"drawWater",32,'cyan','blue',0))
+sprites.push( new Sprite(9,"drawChair",32,"brown","brown",0))
+sprites.push( new Sprite(10,"drawChair",32,"brown","brown",1))
 
 //world_elements.push(new MapElement((sprites[4]),0,0,640,100,32,0))
 //world_elements.push(new MapElement((sprites[3]),0,100,640,300,32,1))
 //world_elements.push(new MapElement((sprites[0]),48,48,150,150,32,2))
+world_elements.push(new MapElement(0,96,128,96,96,64,1))
+world_elements.push(new MapElement(0,384,288,96,96,64,2))
+world_elements.push(new MapElement(0,544,192,192,224,64,3))
+world_elements.push(new MapElement(5,576,224,128,160,64,4))
+world_elements.push(new MapElement(3,96,256,224,256,64,5))
+world_elements.push(new MapElement(6,608,384,32,32,64,6))
+world_elements.push(new MapElement(6,128,192,32,32,64,7))
+world_elements.push(new MapElement(5,128,160,32,32,64,8))
+world_elements.push(new MapElement(5,416,320,32,32,64,9))
+world_elements.push(new MapElement(6,416,352,32,32,64,10))
+
+
 
 world_elements.sort((a, b) => a.l - b.l)
-canvas.width = width;
+canvas.width =  width;
 canvas.height = height;
 
 
@@ -267,7 +283,7 @@ canvas.addEventListener('click', (e) => {
                 e_c_y = my
                 my = t
               }
-              world_elements.push(new MapElement((sprites[editor_tile]),e_c_x,e_c_y,mx-e_c_x,my-e_c_y,32,e_layers_s+1))
+              world_elements.push(new MapElement(editor_tile,e_c_x,e_c_y,mx-e_c_x,my-e_c_y,32,e_layers_s+1))
               e_layers_s++
               e_c_state = 0
             }
@@ -358,6 +374,10 @@ window.addEventListener( "keydown", (e) => {
     case "new":
       break;
     case "editor":
+      if (e.keyCode == 67)
+      {
+        saveWorldClipboard()
+      }
       if (e.keyCode == 13)
       {
         //open context menu
@@ -582,10 +602,10 @@ function drawArea(spr,x,y,s,w,h,o=1.0)
 function drawGame()
 {
   ctx.clearRect(0, 0, width, height);
-  drawWorldElements();
-  //sheet()
-  drawCharacter(ctx,player.x % (10 * scale),player.y % (6*scale),scale,"blue","red","witch")
-  drawEditorHud()
+  drawWorldElements(1.0);
+  //sheet(ctx,0,215,185,37)
+  //drawCharacter(ctx,player.x % (10 * scale),player.y % (6*scale),scale,"blue","red","witch")
+  //drawEditorHud()
 }
 
 function drawEditor()
@@ -668,7 +688,7 @@ function drawWorldElements(o = 1.0)
       else dx = 0
       if (dy<0) dy = -dy 
       else dy = 0
-      drawArea((e.sp),e.x+wx,e.y+wy,32,e.w-dx,e.h-dy,o) //TODO : clip to window
+      drawArea(sprites[e.sp],e.x+wx,e.y+wy,32,e.w-dx,e.h-dy,o) //TODO : clip to window
     }
   })
 }
@@ -725,10 +745,10 @@ function drawEditorHud()
   ctx.fillStyle = "#fff";
   ctx.textAlign = "center";
 
-  ctx.fillText("X: " + mx, width/2, height*0.8);
-  ctx.fillText("Y: " + mx, width/2, height*0.85);
-  ctx.fillText("WX: " + wx, width/2, height*0.9);
-  ctx.fillText("WX: " + wy, width/2, height*0.95);
+  //ctx.fillText("X: " + mx, width/2, height*0.8);
+  //ctx.fillText("Y: " + mx, width/2, height*0.85);
+  ctx.fillText("WX: " + wx, width-100, height*0.9);
+  ctx.fillText("WX: " + wy, width-100, height*0.95);
 }
 
 function pad(num) {
@@ -977,7 +997,23 @@ function drawSign(c,x,y,s,primary,secondary,t="")
 {
 }
 
+function saveWorldClipboard()
+{
+  var c = "";
+  world_elements.forEach(function(e){
+    c = c + "world_elements.push(new MapElement(" + e.sp + "," + e.x + "," + e.y + "," + e.w + "," + e.h + "," + scale + "," + e.l + "))\n";
+    
+  })
+  updateClipboard(c) 
+}
 
+function updateClipboard(c) {
+  navigator.clipboard.writeText(c).then(function() {
+    console.log("clipped")
+  }, function() {
+    console.log("not clipped")
+  });
+}
 
 function loadGame()
 {

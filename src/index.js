@@ -21,11 +21,23 @@ let states = [
   
 ]
 
-
+function rgba(r,g,b,a) {
+  
+  return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+}
+function sheet()
+{
+  T = Math.tan
+  S = Math.sin
+  x = document.getElementById("game").getContext("2d")
+  let t=  0
+  R = rgba
+for(i=82;i--;T(f=m=>x.fillRect(S?0:70+t*60%19*99-X*m,S?0:8+Y*8+(t*3|0)*98,a=S?2e3:8,a,S=0))>9||S?T(T=e=>Math.random()*255)**2/2e3>X*X+(Y-5)**2&&f(8)+f(-8):x.fillStyle=R(T(),T(),T()))X=i&7,Y=i>>3
+}
 let imgs = [];
 let scale = 64;
 let saved = false;
-let game_state = "editor";// default home, editor for worldedit
+let game_state = "home";// default home, editor for worldedit
 let menu_state = "new";
 let pan = false;
 let w_dx = 0;
@@ -544,11 +556,12 @@ function drawCharacter(c,x,y,scale,primary,secondary,type)
   
 }
 
-function drawArea(spr,x,y,s,w,h)
+function drawArea(spr,x,y,s,w,h,o=1.0)
 {
   
   scratch.width = w
   scratch.height = h
+  ctx2.globalAlpha = o;
   for(i=0;i < w/s+1;i++)
   {
     for(j=0;j < h/s+1;j++)
@@ -558,7 +571,9 @@ function drawArea(spr,x,y,s,w,h)
   }
   var i = new Image();
   i.src = scratch.toDataURL();
+  ctx2.globalAlpha = 1.0;
   ctx.drawImage(i,x,y);
+
 }
 
 
@@ -567,9 +582,10 @@ function drawArea(spr,x,y,s,w,h)
 function drawGame()
 {
   ctx.clearRect(0, 0, width, height);
-  drawRoom(player.x,player.y)
-  drawCharacter(player.x % (10 * scale),player.y % (6*scale),scale,"blue","red","witch")
-  drawHud()
+  drawWorldElements();
+  //sheet()
+  drawCharacter(ctx,player.x % (10 * scale),player.y % (6*scale),scale,"blue","red","witch")
+  drawEditorHud()
 }
 
 function drawEditor()
@@ -582,7 +598,7 @@ function drawEditor()
   //drawArea(spr,135,145,32,220,220)
   
   //drawRoom(1,1);
-  drawWorldElements()
+  drawWorldElements(1.0)
   drawOverlay(ctx);
   if (editor_state=="map")
     ctx.strokeStyle = "white";
@@ -641,7 +657,7 @@ function drawOverlay(c)
 
 
 
-function drawWorldElements()
+function drawWorldElements(o = 1.0)
 {
   world_elements.forEach(function(e){
     if (e.x + wx < width-200 && e.y + wy <height -200 && e.x+e.w+wx >0 && e.y+e.h+wy>0)
@@ -652,10 +668,11 @@ function drawWorldElements()
       else dx = 0
       if (dy<0) dy = -dy 
       else dy = 0
-      drawArea((e.sp),e.x+wx,e.y+wy,32,e.w-dx,e.h-dy) //TODO : clip to window
+      drawArea((e.sp),e.x+wx,e.y+wy,32,e.w-dx,e.h-dy,o) //TODO : clip to window
     }
   })
 }
+
 
 function drawHud()
 {
@@ -875,6 +892,7 @@ function drawDoor(c,x,y,s,primary,secondary,t=0)
 
 function drawWater(c,x,y,s,primary,secondary,t=0)
 {
+  c.clearRect(0,0, s,s);
   c.fillStyle = secondary
   c.fillRect(x,y,s,s)
   

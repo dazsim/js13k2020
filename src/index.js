@@ -52,6 +52,7 @@ let e_c_x = 0;
 let e_c_y = 0;
 let editor_tile = 0;
 let editor_tile_max = 5;
+let editMode = 0; // 0 == world map. 1 == collision map
 
 let editor_menu_state = "save"; // also load/clear/exit
 let map_width = scale*10*10;
@@ -66,7 +67,7 @@ let e_sprite_s = 0;
 let e_layers_s = 0;
 
 let world_elements = []
-
+let collision_elements = []
 
 var player = {
 	xp: 0,
@@ -132,10 +133,15 @@ sprites.push( new Sprite(7,"drawDoor",32,"lightgrey","grey",1))
 sprites.push( new Sprite(8,"drawWater",32,'cyan','blue',0))
 sprites.push( new Sprite(9,"drawChair",32,"brown","brown",0))
 sprites.push( new Sprite(10,"drawChair",32,"brown","brown",1))
+sprites.push( new Sprite(11,"drawSolid",32,"grey"))
+sprites.push( new Sprite(12,"drawSolid",32,"grey","lightgrey",1))
+sprites.push( new Sprite(13,"drawSolid",32,"grey","lightgrey",2))
+sprites.push( new Sprite(14,"drawSolid",32,"grey","lightgrey",3))
+sprites.push( new Sprite(15,"drawSolid",32,"grey","lightgrey",4))
+sprites.push( new Sprite(16,"drawCollide",32))
 
-//world_elements.push(new MapElement((sprites[4]),0,0,640,100,32,0))
-//world_elements.push(new MapElement((sprites[3]),0,100,640,300,32,1))
-//world_elements.push(new MapElement((sprites[0]),48,48,150,150,32,2))
+
+
 world_elements.push(new MapElement(0,96,128,96,96,64,1))
 world_elements.push(new MapElement(0,384,288,96,96,64,2))
 world_elements.push(new MapElement(0,544,192,192,224,64,3))
@@ -146,10 +152,17 @@ world_elements.push(new MapElement(6,128,192,32,32,64,7))
 world_elements.push(new MapElement(5,128,160,32,32,64,8))
 world_elements.push(new MapElement(5,416,320,32,32,64,9))
 world_elements.push(new MapElement(6,416,352,32,32,64,10))
+collision_elements.push(new MapElement(1,544,192,192,32,64,1))
+collision_elements.push(new MapElement(1,704,224,32,192,64,1))
+collision_elements.push(new MapElement(1,640,384,64,32,64,1))
+collision_elements.push(new MapElement(1,544,384,64,32,64,1))
+collision_elements.push(new MapElement(1,544,224,32,160,64,1))
+
 
 
 
 world_elements.sort((a, b) => a.l - b.l)
+collision_elements.sort((a,b) => a.l - b.l)
 canvas.width =  width;
 canvas.height = height;
 
@@ -283,8 +296,15 @@ canvas.addEventListener('click', (e) => {
                 e_c_y = my
                 my = t
               }
-              world_elements.push(new MapElement(editor_tile,e_c_x,e_c_y,mx-e_c_x,my-e_c_y,32,e_layers_s+1))
-              e_layers_s++
+              if (editMode)
+              {
+                collision_elements.push(new MapElement(1,e_c_x,e_c_y,mx-e_c_x,my-e_c_y,32,1)) 
+                
+              } else
+              {
+                world_elements.push(new MapElement(editor_tile,e_c_x,e_c_y,mx-e_c_x,my-e_c_y,32,e_layers_s+1)) 
+                e_layers_s++
+              }
               e_c_state = 0
             }
           }
@@ -374,6 +394,12 @@ window.addEventListener( "keydown", (e) => {
     case "new":
       break;
     case "editor":
+      if (e.keyCode == 90)
+      {
+        editMode = 1-editMode;
+        
+      }
+
       if (e.keyCode == 67)
       {
         saveWorldClipboard()
@@ -618,7 +644,14 @@ function drawEditor()
   //drawArea(spr,135,145,32,220,220)
   
   //drawRoom(1,1);
-  drawWorldElements(1.0)
+  if (editMode)
+  {
+    drawWorldElements(0.5)
+    drawCollideElements(1.0)
+  } else
+  {
+    drawWorldElements(1.0)
+  }
   drawOverlay(ctx);
   if (editor_state=="map")
     ctx.strokeStyle = "white";
@@ -689,6 +722,22 @@ function drawWorldElements(o = 1.0)
       if (dy<0) dy = -dy 
       else dy = 0
       drawArea(sprites[e.sp],e.x+wx,e.y+wy,32,e.w-dx,e.h-dy,o) //TODO : clip to window
+    }
+  })
+}
+
+function drawCollideElements(o= 1.0)
+{
+  collision_elements.forEach(function(e){
+    if (e.x + wx < width-200 && e.y + wy <height -200 && e.x+e.w+wx >0 && e.y+e.h+wy>0)
+    {
+      var dx = width-200-e.x-e.w-wx;
+      var dy = height-200-e.y-e.h-wy;
+      if (dx<0) dx = -dx 
+      else dx = 0
+      if (dy<0) dy = -dy 
+      else dy = 0
+      drawArea(sprites[16],e.x+wx,e.y+wy,32,e.w-dx,e.h-dy,o) //TODO : clip to window
     }
   })
 }
@@ -997,11 +1046,99 @@ function drawSign(c,x,y,s,primary,secondary,t="")
 {
 }
 
+
+function drawRidge(c,x,y,s)
+{
+  c.beginPath()
+  c.moveTo(x+s*0.5-s/2,y+s*0.75-s/2)
+  c.lineTo(x-s/2+s*0.5,y+s/2)
+  c.stroke()
+  c.beginPath()
+  c.moveTo(x+s*0.25-s/2,y+s*0.75-s/2)
+  c.lineTo(x+s*0.25-s/2,y+s-s/2)
+  c.stroke()
+  c.beginPath()
+  c.moveTo(x+s*0.75-s/2,y+s*0.75-s/2)
+  c.lineTo(x+s*0.75-s/2,y+s-s/2)
+  c.stroke()
+  c.beginPath()
+  c.moveTo(x+1-s/2,y+s*0.75-s/2)
+  c.lineTo(x+1-s/2,y+s-s/2)
+  c.stroke()
+  c.beginPath()
+  c.moveTo(x+s-1 -s/2,y+s*0.75-s/2)
+  c.lineTo(x+s-1-s/2,y+s-s/2)
+  c.stroke()
+}
+
+function drawSolid(c,x,y,s,primary,secondary = "",t=0)
+{
+  c.save();  
+  c.fillStyle = primary
+  c.fillRect(x,y,s,s)
+  c.strokeStyle = secondary
+  
+  c.width =s
+  c.height = s
+  switch (t)
+  {
+    case 0:
+      break
+    case 1:
+      c.translate(s/2,s/2)
+      drawRidge(c,x,y,s)
+      break
+    case 2:
+      c.translate(s/2,s/2)
+      c.rotate(Math.PI/2)
+      drawRidge(c,x,y,s)
+      
+      break
+    case 3:
+      c.rotate(Math.PI)
+      drawRidge(c,x-s/2,y-s/2,s)
+      break
+    case 4:
+      c.rotate(Math.PI*1.5)
+      drawRidge(c,x-s/2,y+s/2,s)
+      break
+  }
+  c.restore();
+}
+
+function drawCollide(c,x,y,s)
+{
+   
+  
+  c.strokeStyle = rgba(255,0,0,150)
+  c.strokeRect(x,y,s,s)
+
+  c.beginPath()
+  c.moveTo(x+s*0.5,y)
+  c.lineTo(x,y+s*0.5)
+  c.stroke()
+
+  c.beginPath()
+  c.moveTo(x+s,y)
+  c.lineTo(x,y+s)
+  c.stroke()
+
+  c.beginPath()
+  c.moveTo(x+s*0.5,y+s)
+  c.lineTo(x+s,y+s*0.5)
+  c.stroke()
+
+}
+
 function saveWorldClipboard()
 {
   var c = "";
   world_elements.forEach(function(e){
     c = c + "world_elements.push(new MapElement(" + e.sp + "," + e.x + "," + e.y + "," + e.w + "," + e.h + "," + scale + "," + e.l + "))\n";
+    
+  })
+  collision_elements.forEach(function(e){
+    c = c + "collision_elements.push(new MapElement(" + e.sp + "," + e.x + "," + e.y + "," + e.w + "," + e.h + "," + scale + "," + e.l + "))\n";
     
   })
   updateClipboard(c) 

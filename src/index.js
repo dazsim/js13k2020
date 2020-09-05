@@ -68,6 +68,7 @@ let e_layers_s = 0;
 
 let world_elements = []
 let collision_elements = []
+let entity_elements = []
 
 var player = {
 	xp: 0,
@@ -92,28 +93,21 @@ class MapElement {
     this.h = h
     this.sc = sc
     this.l = l
-    
   }
-  
 }
 
 class Sprite {
   constructor(i,t,s,c1,c2,c3) {
-    //scratch.width=s
-    //scratch.height=s
     this.t = t
     this.s = s
     this.i = i
     ctx2.clearRect(0, 0, s, s)
     eval(this.t)(ctx2,0,0,s,c1,c2,c3)
-    
     this.i = new Image()
     this.i.src = scratch.toDataURL()
-    
   }
   draw(c,x,y)
   {
-    
     c.drawImage(this.i,x,y)
   }
 
@@ -721,7 +715,7 @@ function drawWorldElements(o = 1.0)
       else dx = 0
       if (dy<0) dy = -dy 
       else dy = 0
-      drawArea(sprites[e.sp],e.x+wx,e.y+wy,32,e.w-dx,e.h-dy,o) //TODO : clip to window
+      drawArea(sprites[e.sp],e.x+wx,e.y+wy,32,e.w-dx,e.h-dy,o) 
     }
   })
 }
@@ -737,7 +731,23 @@ function drawCollideElements(o= 1.0)
       else dx = 0
       if (dy<0) dy = -dy 
       else dy = 0
-      drawArea(sprites[16],e.x+wx,e.y+wy,32,e.w-dx,e.h-dy,o) //TODO : clip to window
+      drawArea(sprites[16],e.x+wx,e.y+wy,32,e.w-dx,e.h-dy,o) 
+    }
+  })
+}
+
+function drawEntityElements(o=1.0)
+{
+  entity_elements.forEach(function(e) {
+    if (e.x + wx < width-200 && e.y + wy <height -200 && e.x+e.w+wx >0 && e.y+e.h+wy>0)
+    {
+      var dx = width-200-e.x-e.w-wx;
+      var dy = height-200-e.y-e.h-wy;
+      if (dx<0) dx = -dx 
+      else dx = 0
+      if (dy<0) dy = -dy 
+      else dy = 0
+      drawArea(sprites[e.sp],e.x+wx,e.y+wy,32,e.w-dx,e.h-dy,o) 
     }
   })
 }
@@ -1129,6 +1139,8 @@ function drawCollide(c,x,y,s)
   c.stroke()
 
 }
+
+
 
 function saveWorldClipboard()
 {

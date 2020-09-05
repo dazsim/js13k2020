@@ -735,7 +735,7 @@ function drawWorldElements(o = 1.0)
       else dx = 0
       if (dy<0) dy = -dy 
       else dy = 0
-      drawArea(sprites[e.sp],e.x+wx,e.y+wy,32,e.w-dx,e.h-dy,o) 
+      drawArea(sprites[e.sp],e.x+wx,e.y+wy,32,e.w-dx,e.h-dy,o)
     }
   })
 }
@@ -751,14 +751,14 @@ function drawCollideElements(o= 1.0)
       else dx = 0
       if (dy<0) dy = -dy 
       else dy = 0
-      drawArea(sprites[16],e.x+wx,e.y+wy,32,e.w-dx,e.h-dy,o) 
+      drawArea(sprites[16],e.x+wx,e.y+wy,32,e.w-dx,e.h-dy,o)
     }
   })
 }
 
-function drawEntityElements(o=1.0)
+function drawEntityElements(o= 1.0)
 {
-  entity_elements.forEach(function(e) {
+  entity_elements.forEach(function(e){
     if (e.x + wx < width-200 && e.y + wy <height -200 && e.x+e.w+wx >0 && e.y+e.h+wy>0)
     {
       var dx = width-200-e.x-e.w-wx;
@@ -767,7 +767,7 @@ function drawEntityElements(o=1.0)
       else dx = 0
       if (dy<0) dy = -dy 
       else dy = 0
-      drawArea(sprites[e.sp],e.x+wx,e.y+wy,32,e.w-dx,e.h-dy,o) 
+      drawArea(sprites[e.sp],e.x+wx,e.y+wy,32,e.w-dx,e.h-dy,o)
     }
   })
 }

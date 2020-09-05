@@ -265,13 +265,26 @@ canvas.addEventListener('click', (e) => {
             // we are in the build area
             if (!e_c_state)
             {
+              
               e_c_state++
               
               
 
               
-              e_c_x = parseInt(((mx - wx)*2/scale))* (scale/2) ;
-              e_c_y = parseInt(((my - wy)*2/scale))* (scale/2);
+              e_c_x = parseInt(mx - wx - (mx/2 - wx)%scale)
+              e_c_y = parseInt(my - wy - (my/2 - wy)%scale)
+              switch(editMode)
+              {
+                case 2:
+                  var dx = (mx - wx) - (mx - wx)%scale /2
+                  entity_elements.push(new MapElement(
+                    editor_tile,
+                    e_c_x >= 0 ? e_c_x : e_c_x - scale/2,
+                    e_c_y > 0 ? e_c_y : e_c_y ,
+                    scale/2,scale/2,32,e_layers_s+1))
+                  e_c_state = 0
+                  break
+              }
             } else
             {
               // add new bounding area
@@ -290,14 +303,16 @@ canvas.addEventListener('click', (e) => {
                 e_c_y = my
                 my = t
               }
-              if (editMode)
+              switch (editMode)
               {
-                collision_elements.push(new MapElement(1,e_c_x,e_c_y,mx-e_c_x,my-e_c_y,32,1)) 
+                case 0:
+                  world_elements.push(new MapElement(editor_tile,e_c_x,e_c_y,mx-e_c_x,my-e_c_y,32,e_layers_s+1)) 
+                  e_layers_s++
+                  break
+                case 1:
+                  collision_elements.push(new MapElement(1,e_c_x,e_c_y,mx-e_c_x,my-e_c_y,32,1))
+                  break
                 
-              } else
-              {
-                world_elements.push(new MapElement(editor_tile,e_c_x,e_c_y,mx-e_c_x,my-e_c_y,32,e_layers_s+1)) 
-                e_layers_s++
               }
               e_c_state = 0
             }
@@ -388,13 +403,17 @@ window.addEventListener( "keydown", (e) => {
     case "new":
       break;
     case "editor":
-      if (e.keyCode == 90)
+      if (e.keyCode == 90) // z
       {
-        editMode = 1-editMode;
+        editMode++
+        if (editMode>2)
+        {
+          editMode = 0;
+        }
         
       }
 
-      if (e.keyCode == 67)
+      if (e.keyCode == 67) // c
       {
         saveWorldClipboard()
       }
@@ -631,28 +650,29 @@ function drawGame()
 function drawEditor()
 {
   ctx.clearRect(0,0, width,height);
-  
-  
-  //drawArea(sprites[1],120,120,32,240,220)
-
-  //drawArea(spr,135,145,32,220,220)
-  
-  //drawRoom(1,1);
-  if (editMode)
+  switch(editMode)
   {
-    drawWorldElements(0.5)
-    drawCollideElements(1.0)
-  } else
-  {
-    drawWorldElements(1.0)
+    case 0:
+      drawWorldElements(1.0)
+      break
+    case 1:
+      drawWorldElements(0.5)
+      drawCollideElements(1.0)
+      break
+    case 2:
+      drawWorldElements(0.5)
+      drawCollideElements(0.5)
+      drawEntityElements(1.0)
+      break
   }
-  drawOverlay(ctx);
+  
+  
   if (editor_state=="map")
     ctx.strokeStyle = "white";
   else
     ctx.strokeStyle = "grey";
   ctx.lineWidth = 2
-
+  drawOverlay(ctx);
 
   // change this to highlight the area currently selected in the layer list.
   //ctx.strokeRect(scale*editor_x,scale*editor_y,scale,scale)
@@ -1151,6 +1171,10 @@ function saveWorldClipboard()
   })
   collision_elements.forEach(function(e){
     c = c + "collision_elements.push(new MapElement(" + e.sp + "," + e.x + "," + e.y + "," + e.w + "," + e.h + "," + scale + "," + e.l + "))\n";
+    
+  })
+  entity_elements.forEach(function(e){
+    c = c + "entity_elements.push(new MapElement(" + e.sp + "," + e.x + "," + e.y + "," + e.w + "," + e.h + "," + scale + "," + e.l + "))\n";
     
   })
   updateClipboard(c) 

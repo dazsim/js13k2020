@@ -40,7 +40,7 @@ function sheet(x,seed = 0,a=255,b=255,c=255)
 let imgs = [];
 let scale = 64;
 let saved = false;
-let game_state = "editor";// default home, editor for worldedit
+let game_state = "home";// default home, editor for worldedit
 let menu_state = "new";
 let pan = false;
 let w_dx = 0;
@@ -76,11 +76,11 @@ var player = {
 	gold: 0,
   skills: {},
   spells: {},
-  inventory: {},
+  inventory: [],
   hp: 8,
   maxhp : 10,
-  x: 320,
-  y: 196,
+  x: 0,
+  y: 0,
 
 };
 
@@ -93,6 +93,15 @@ class MapElement {
     this.h = h
     this.sc = sc
     this.l = l
+  }
+}
+
+class Item{
+  constructor(sp,name,count,id){
+    this.id = id
+    this.sp = sp
+    this.name = name
+    this.count = count
   }
 }
 
@@ -135,24 +144,53 @@ sprites.push( new Sprite(15,"drawSolid",32,"grey","lightgrey",4))
 sprites.push( new Sprite(16,"drawCollide",32))
 
 
+/** INSERT WORLD HERE */
 
-world_elements.push(new MapElement(0,96,128,96,96,64,1))
-world_elements.push(new MapElement(0,384,288,96,96,64,2))
-world_elements.push(new MapElement(0,544,192,192,224,64,3))
-world_elements.push(new MapElement(5,576,224,128,160,64,4))
-world_elements.push(new MapElement(3,96,256,224,256,64,5))
-world_elements.push(new MapElement(6,608,384,32,32,64,6))
-world_elements.push(new MapElement(6,128,192,32,32,64,7))
-world_elements.push(new MapElement(5,128,160,32,32,64,8))
-world_elements.push(new MapElement(5,416,320,32,32,64,9))
-world_elements.push(new MapElement(6,416,352,32,32,64,10))
-collision_elements.push(new MapElement(1,544,192,192,32,64,1))
-collision_elements.push(new MapElement(1,704,224,32,192,64,1))
-collision_elements.push(new MapElement(1,640,384,64,32,64,1))
-collision_elements.push(new MapElement(1,544,384,64,32,64,1))
-collision_elements.push(new MapElement(1,544,224,32,160,64,1))
+world_elements.push(new MapElement(3,224,128,416,320,64,1))
+world_elements.push(new MapElement(2,384,224,128,96,64,2))
+world_elements.push(new MapElement(4,416,256,64,32,64,3))
+world_elements.push(new MapElement(0,384,192,128,32,64,1))
+collision_elements.push(new MapElement(1,384,192,128,32,64,1))
+entity_elements.push(new MapElement(1,256,160,32,32,64,1))
+entity_elements.push(new MapElement(1,544,160,32,32,64,1))
+entity_elements.push(new MapElement(1,512,352,32,32,64,1))
+entity_elements.push(new MapElement(1,320,352,32,32,64,1))
+entity_elements.push(new MapElement(1,384,128,32,32,64,1))
+entity_elements.push(new MapElement(1,608,256,32,32,64,1))
+entity_elements.push(new MapElement(1,224,256,32,32,64,1))
+entity_elements.push(new MapElement(1,288,416,32,32,64,1))
 
 
+
+player.inventory.push(new Item(sprites[1],'tree',1,1))
+player.inventory.push(new Item(sprites[0],'wall',1,2))
+
+function insertItem(i)
+{
+  var found = false;
+  player.inventory.some(function(e) {
+    if (e.id == i.l)
+    {
+      found = true;
+      e.count += i.count;
+      break;
+    }
+  })
+  if (!found)
+  {
+    if (player.inventory.length < 33)
+    {
+      found = true
+      player.inventory.push(i);
+    }
+  }
+  return found
+}
+
+let item_registry = [
+  {sp : 1, name : 'tree', id : 1},
+  {sp : 2, name : '', id : 2}
+]
 
 
 world_elements.sort((a, b) => a.l - b.l)
@@ -271,17 +309,17 @@ canvas.addEventListener('click', (e) => {
               
 
               
-              e_c_x = parseInt(mx - wx - (mx/2 - wx)%scale)
-              e_c_y = parseInt(my - wy - (my/2 - wy)%scale)
+              e_c_x = parseInt(mx - wx - (mx - wx)%(scale/2))
+              e_c_y = parseInt(my - wy - (my - wy)%(scale/2))
               switch(editMode)
               {
                 case 2:
-                  var dx = (mx - wx) - (mx - wx)%scale /2
+                  var dx = (mx - wx) - (mx - wx)%(scale /2)
                   entity_elements.push(new MapElement(
                     editor_tile,
-                    e_c_x >= 0 ? e_c_x : e_c_x - scale/2,
-                    e_c_y > 0 ? e_c_y : e_c_y ,
-                    scale/2,scale/2,32,e_layers_s+1))
+                    e_c_x >= 0 ? e_c_x : e_c_x + 2*(mx-wx)%(scale/2),
+                    e_c_y >= 0 ? e_c_y : e_c_y + 2*(my-wy)%(scale/2) ,
+                    scale/2,scale/2,32,1))
                   e_c_state = 0
                   break
               }
@@ -318,6 +356,8 @@ canvas.addEventListener('click', (e) => {
             }
           }
       }
+      
+
   }
 })
 
@@ -329,7 +369,7 @@ canvas.addEventListener('auxclick', function(e) {
 
 window.addEventListener( "keydown", (e) => {
   // handle keyboard input based on game_state etc. 
-  
+  console.log(game_state)
   switch(game_state)
   {
     case "home":
@@ -401,6 +441,40 @@ window.addEventListener( "keydown", (e) => {
     case "save":
       break;
     case "new":
+      
+      if (e.keyCode == 38)
+      {
+        
+        if (!checkCollision(collision_elements, width/2 - player.x, (height-200)/2 - player.y)) player.y = player.y + 2 
+        
+      }
+      if (e.keyCode == 40)
+      {
+        
+        if (!checkCollision(collision_elements,width/2 - player.x,(height-200)/2 - player.y + scale/2)) player.y= player.y - 2
+      }
+      if (e.keyCode == 39)
+      {
+        
+        if (!checkCollision(collision_elements,width/2 - player.x+ scale/2,(height-200)/2 - player.y)) player.x-=2
+      }
+      if (e.keyCode == 37)
+      {
+        
+        if (!checkCollision(collision_elements,width/2 - player.x  ,(height-200)/2 - player.y)) player.x+=2
+      }
+      if (e.keyCode == 32)
+      {
+        //attempt to find item on floor.
+        var i = checkCollision(entity_elements,width/2 - player.x  ,(height-200)/2 - player.y,true)
+        if (i)
+        {
+          if (insertItem(i))
+          {
+            entity_elements = arrayRemove(entity_elements,i.l)
+          }
+        }
+      }
       break;
     case "editor":
       if (e.keyCode == 90) // z
@@ -469,6 +543,8 @@ window.addEventListener( "keydown", (e) => {
       break;
   }
 });
+
+function arrayRemove(arr, value) { return arr.filter(function(ele){ return ele.l != value; });}
 
 function drawMenu()
 {
@@ -641,10 +717,11 @@ function drawArea(spr,x,y,s,w,h,o=1.0)
 function drawGame()
 {
   ctx.clearRect(0, 0, width, height);
-  drawWorldElements(1.0);
+  drawWorldElements(1.0,player.x,player.y);
+  drawEntityElements(1.0,player.x,player.y);
   //sheet(ctx,0,215,185,37)
-  //drawCharacter(ctx,player.x % (10 * scale),player.y % (6*scale),scale,"blue","red","witch")
-  //drawEditorHud()
+  drawCharacter(ctx,width/2,(height-200)/2,scale/2,"blue","red","witch")
+  drawHud()
 }
 
 function drawEditor()
@@ -653,16 +730,18 @@ function drawEditor()
   switch(editMode)
   {
     case 0:
-      drawWorldElements(1.0)
+      drawWorldElements(1.0,wx,wy)
+      drawEntityElements(0.5,wx,wy)
       break
     case 1:
-      drawWorldElements(0.5)
-      drawCollideElements(1.0)
+      drawWorldElements(0.5,wx,wy)
+      drawCollideElements(1.0,wx,wy)
+      drawEntityElements(0.5,wx,wy)
       break
     case 2:
-      drawWorldElements(0.5)
-      drawCollideElements(0.5)
-      drawEntityElements(1.0)
+      drawWorldElements(0.5,wx,wy)
+      drawCollideElements(0.5,wx,wy)
+      drawEntityElements(1.0,wx,wy)
       break
   }
   
@@ -677,6 +756,7 @@ function drawEditor()
   // change this to highlight the area currently selected in the layer list.
   //ctx.strokeRect(scale*editor_x,scale*editor_y,scale,scale)
   //drawCharacter(player.x % (10 * scale),player.y % (6*scale),scale,"blue","red","witch")
+  
   drawEditorHud();
 }
 
@@ -724,50 +804,77 @@ function drawOverlay(c)
 
 
 
-function drawWorldElements(o = 1.0)
+function drawWorldElements(o = 1.0,ax,ay)
 {
   world_elements.forEach(function(e){
-    if (e.x + wx < width-200 && e.y + wy <height -200 && e.x+e.w+wx >0 && e.y+e.h+wy>0)
+    if (e.x + ax < width-200 && e.y + ay <height -200 && e.x+e.w+ax >0 && e.y+e.h+ay>0)
     {
-      var dx = width-200-e.x-e.w-wx;
-      var dy = height-200-e.y-e.h-wy;
+      var dx = width-200-e.x-e.w-ax;
+      var dy = height-200-e.y-e.h-ay;
       if (dx<0) dx = -dx 
       else dx = 0
       if (dy<0) dy = -dy 
       else dy = 0
-      drawArea(sprites[e.sp],e.x+wx,e.y+wy,32,e.w-dx,e.h-dy,o)
+      drawArea(sprites[e.sp],e.x+ax,e.y+ay,32,e.w-dx,e.h-dy,o)
     }
   })
 }
 
-function drawCollideElements(o= 1.0)
+function drawCollideElements(o= 1.0,ax,ay)
 {
   collision_elements.forEach(function(e){
-    if (e.x + wx < width-200 && e.y + wy <height -200 && e.x+e.w+wx >0 && e.y+e.h+wy>0)
+    if (e.x + ax < width-200 && e.y + ay <height -200 && e.x+e.w+ax >0 && e.y+e.h+ay>0)
     {
-      var dx = width-200-e.x-e.w-wx;
-      var dy = height-200-e.y-e.h-wy;
+      var dx = width-200-e.x-e.w-ax;
+      var dy = height-200-e.y-e.h-ay;
       if (dx<0) dx = -dx 
       else dx = 0
       if (dy<0) dy = -dy 
       else dy = 0
-      drawArea(sprites[16],e.x+wx,e.y+wy,32,e.w-dx,e.h-dy,o)
+      drawArea(sprites[16],e.x+ax,e.y+ay,32,e.w-dx,e.h-dy,o)
     }
   })
 }
 
-function drawEntityElements(o= 1.0)
+function checkCollision(dx,dy,i = false)
+{
+  var collide = false
+  var found = 0
+  collision_elements.some(function(e){
+    
+    console.log((e.x) + ' - '+(e.y+e.h))
+    if (dx>e.x && dx <e.x+e.w && dy>e.y && dy<e.y+e.h)
+    {
+      console.log('collide')
+      found = e
+      collide = true
+      return true
+    }
+    
+  })
+  if (!i)
+    return collide
+  else
+  {
+    if (collide && found !==0) 
+    {
+      return found
+    }
+  }
+}
+
+function drawEntityElements(o= 1.0,ax,ay)
 {
   entity_elements.forEach(function(e){
-    if (e.x + wx < width-200 && e.y + wy <height -200 && e.x+e.w+wx >0 && e.y+e.h+wy>0)
+    if (e.x + ax < width-200 && e.y + ay <height -200 && e.x+e.w+ax >0 && e.y+e.h+ay>0)
     {
-      var dx = width-200-e.x-e.w-wx;
-      var dy = height-200-e.y-e.h-wy;
+      var dx = width-200-e.x-e.w-ax;
+      var dy = height-200-e.y-e.h-ay;
       if (dx<0) dx = -dx 
       else dx = 0
       if (dy<0) dy = -dy 
       else dy = 0
-      drawArea(sprites[e.sp],e.x+wx,e.y+wy,32,e.w-dx,e.h-dy,o)
+      drawArea(sprites[e.sp],e.x+ax,e.y+ay,32,e.w-dx,e.h-dy,o)
     }
   })
 }
@@ -775,23 +882,33 @@ function drawEntityElements(o= 1.0)
 
 function drawHud()
 {
+  
   var bezel = 4;
   ctx.fillStyle = "#202020";
-  ctx.fillRect(0,6*scale,width,height - 6*scale)
+  ctx.fillRect(0,height-200,width,200)
   ctx.fillStyle = "#808080";
-  ctx.fillRect(0,6*scale,width-bezel,height - 6*scale-bezel)
+  ctx.fillRect(0,height-200,width-bezel,200-bezel)
   ctx.fillStyle = "#505050";
-  ctx.fillRect(bezel,6*scale+bezel,width-bezel*2,height - 6*scale-bezel*2)
+  ctx.fillRect(bezel,height-200+bezel,width-bezel*2,200-bezel*2)
   ctx.fillStyle = "black";
-  ctx.arc(320,6*scale+48,40,0,Math.PI*2)
+  /*ctx.arc(320,6*scale+48,40,0,Math.PI*2)
   ctx.fill();
   ctx.fillStyle = "red";
-  ctx.beginPath()
-  console.log("left: " + player.hp/player.maxhp*Math.PI)
-  console.log("right: " + (Math.PI -  player.hp/player.maxhp*Math.PI))
-  ctx.arc(320,6*scale+48,40,player.hp/player.maxhp*Math.PI + Math.PI,Math.PI*2 -  player.hp/player.maxhp*Math.PI)
-  ctx.fill();
-  player.hp -= 0.01;
+  ctx.beginPath()*/
+  //console.log("left: " + player.hp/player.maxhp*Math.PI)
+  //console.log("right: " + (Math.PI -  player.hp/player.maxhp*Math.PI))
+  //console.log(player.hp/player.maxhp)
+  //TODO - fix logic
+  //ctx.arc(320,6*scale+48,40,player.hp/player.maxhp*Math.PI + Math.PI,Math.PI*2 -  player.hp/player.maxhp*Math.PI)
+  //ctx.fill();
+  //player.hp -= 0.01;
+  //draw inventory
+  var i = 0;
+  player.inventory.forEach(function(e){
+      
+      drawArea(e.sp,width/2+50 + (scale)*(i%8),(height)/2+210  +(scale)*Math.floor(i/8),scale/2,scale/2,scale/2)
+      i++;
+  })
 
 }
 
